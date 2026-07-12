@@ -25,7 +25,11 @@ Grabbed by Chaos Spawn
 
 COMMANDS:
 /pishock_username <username> - Sets your PiShock account username.
+
 /pishock_apikey <apikey> - Sets your PiShock API key.
+
 /pishock_shocker <shocker_names> - Sets specific PiShock Shockers to target (comma-separated). Leave blank to clear targeted shockers and trigger all active ones.
+
 /pishock_info - Shows your currently configured PiShock account information (with a masked API key for safety).
+
 Commissioned by Angels
