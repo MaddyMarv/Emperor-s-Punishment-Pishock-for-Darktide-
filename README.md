@@ -24,6 +24,7 @@ Eaten by Beast of Nurgle
 Grabbed by Chaos Spawn
 
 COMMANDS:
+
 /pishock_username <username> - Sets your PiShock account username.
 
 /pishock_apikey <apikey> - Sets your PiShock API key.
