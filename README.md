@@ -1,5 +1,6 @@
 # Emperor's Punishment (Pishock for Darktide)
-<img width="1207" height="635" alt="image" src="https://github.com/user-attachments/assets/e4c7871f-dff6-47d4-aad3-3c5242d9b5fd" />
+<img width="1407" height="663" alt="image" src="https://github.com/user-attachments/assets/a48964e6-14f6-4410-bfc6-e84d2aa16327" />
+
 
 You are able to control intensity and durations along with the ability to see chat messages when triggered and set limits for cooldowns.
 
