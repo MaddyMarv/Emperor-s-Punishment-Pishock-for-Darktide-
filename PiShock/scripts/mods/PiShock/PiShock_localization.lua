@@ -44,7 +44,6 @@ local localizations = {
 }
 
 local hooks = {
-    -- General Health & Vitals
     { id = "on_damage_taken",     name = "Health Damage Taken" },
     { id = "on_grimoire_damage",  name = "Grimoire Corruption Tick" },
     { id = "on_corruption_damage",name = "Corruption Taken" },
@@ -56,15 +55,13 @@ local hooks = {
     { id = "on_suppressed",       name = "High Suppression" },
     { id = "on_knocked_down",     name = "Knocked Down" },
     { id = "on_death",            name = "Player Death" },
-    
-    -- Specific Mechanics
+
     { id = "on_minigame_fail",    name = "Minigame Failure" },
     { id = "on_explode",          name = "Plasma / Psyker Explosion" },
     { id = "on_cheer",            name = "For the Emperor" },
     { id = "on_friendly_fire_taken", name = "Friendly Fire (Taken)" },
     { id = "on_friendly_fire_dealt", name = "Friendly Fire (Dealt)" },
-    
-    -- Bosses & Disablers
+
     { id = "on_boss_spawn",       name = "Boss Spawned" },
     { id = "on_pounced",          name = "Pounced by Hound" },
     { id = "on_netted",           name = "Trapped by Trapper" },

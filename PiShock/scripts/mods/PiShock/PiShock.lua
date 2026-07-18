@@ -10,7 +10,6 @@ function mod:clock()
     return 0
 end
 
--- ===== Helper Functions =====
 
 local function local_player_unit()
     local player = Managers.player and Managers.player:local_player_safe(1)
@@ -95,7 +94,6 @@ local function is_player_downed_or_disabled(unit)
     return false
 end
 
--- ===== Game Event Hooks =====
 
 local TRIGGER_NAMES = {
     on_damage_taken = "Health Damage Taken",
@@ -129,14 +127,12 @@ local last_request_time = 0
 local send_pishock_command
 
 mod.on_setting_changed = function(setting_id)
-    -- Check if it's an editor target change (e.g. editor_vitals_target)
     local target_match = setting_id:match("^editor_(%w+)_target$")
     if target_match then
         local prefix = target_match
         local target = mod:get(setting_id)
         if not target then return end
-        
-        -- Load backend values for this target and update the editor widgets silently
+
         mod:set("editor_" .. prefix .. "_op", mod:get("trigger_" .. target .. "_op") or "disabled", false)
         mod:set("editor_" .. prefix .. "_duration", mod:get("trigger_" .. target .. "_duration") or 1, false)
         mod:set("editor_" .. prefix .. "_intensity", mod:get("trigger_" .. target .. "_intensity") or 10, false)
@@ -148,8 +144,7 @@ mod.on_setting_changed = function(setting_id)
         mod:set("editor_" .. prefix .. "_intensity_max", mod:get("trigger_" .. target .. "_intensity_max") or 10, false)
         return
     end
-    
-    -- Check if it's an editor slider/checkbox change
+
     local prefix, property = setting_id:match("^editor_(%w+)_(.+)$")
     if prefix and property and property ~= "target" and property ~= "group" then
         local target = mod:get("editor_" .. prefix .. "_target")
@@ -172,7 +167,7 @@ local has_printed_continuous_start = false
 
 function mod.update(dt)
     local tm = mod:clock()
-    
+
     local unit = local_player_unit()
     local state = get_player_disabled_state(unit)
     local hook_id_for_state = nil
@@ -186,7 +181,7 @@ function mod.update(dt)
         }
         hook_id_for_state = state_to_hook[state]
     end
-    
+
     local is_disabled_now = (hook_id_for_state ~= nil)
 
     if is_disabled_now and mod:get("pulse_while_disabled") then
@@ -200,7 +195,7 @@ function mod.update(dt)
             end
         end
     end
-    
+
     if tm >= continuous_trigger_timer then
         if is_disabled_now and mod:get("pulse_while_disabled") then
             send_pishock_command(hook_id_for_state)
@@ -210,9 +205,9 @@ function mod.update(dt)
     end
 
     if #pishock_command_queue == 0 then return end
-    
 
-    
+
+
     local hook_id = table.remove(pishock_command_queue, 1)
 
     local op = mod:get("trigger_" .. hook_id .. "_op")
@@ -250,7 +245,7 @@ function mod.update(dt)
     if continuous_disablers[hook_id] and mod:get("pulse_while_disabled") then
         duration = 1
     end
-    
+
     local username = mod:get("pishock_username") or ""
     local apikey = mod:get("pishock_apikey") or ""
 
@@ -269,7 +264,7 @@ function mod.update(dt)
         apikey = apikey,
         shocker_names = mod:get("pishock_shocker") or ""
     }
-    
+
     Managers.backend:url_request("http://127.0.0.1:20010/shock", {
         method = "POST",
         body = payload
@@ -282,9 +277,9 @@ function mod.update(dt)
 
     if mod:get("chat_feedback") then
         local trigger_name = TRIGGER_NAMES[hook_id] or hook_id
-        
+
         local is_continuous = continuous_disablers[hook_id] and mod:get("pulse_while_disabled")
-        
+
         if is_continuous then
             if not has_printed_continuous_start then
                 has_printed_continuous_start = true
@@ -312,28 +307,28 @@ local last_grimoire_time = 0
 
 function send_pishock_command(hook_id)
     local tm = mod:clock()
-    
+
     if hook_id == "on_grimoire_damage" then
         if tm < last_grimoire_time + 10 then
-            return -- Drop the grimoire tick
+            return
         end
         last_grimoire_time = tm
     end
-    
+
     local cooldown = tonumber(mod:get("command_cooldown")) or 0
-    
+
     local bypass_cooldown = false
     if hook_id == "on_death" or hook_id == "on_knocked_down" or hook_id == "on_explode" then
         bypass_cooldown = true
     end
-    
+
     if hook_id ~= "on_grimoire_damage" then
         if not bypass_cooldown and tm < last_event_time + cooldown then
-            return -- Drop the command (Invincibility window)
+            return
         end
         last_event_time = tm
     end
-    
+
     table.insert(pishock_command_queue, hook_id)
 end
 
@@ -358,21 +353,21 @@ state_event(CLASS.PlayerCharacterStateExploding,     "on_explode")
 mod:hook_safe(CLASS.PlayerCharacterStateDodging, "on_enter", function(self, unit, ...)
     local ok_me, is_me = pcall(is_local_player, unit)
     if not ok_me or not is_me then return end
-    
+
     local ok_tired, is_tired = pcall(function()
         local dodge_state = self._dodge_character_state_component
         local weapon_ext = self._weapon_extension
         local buff_ext = self._buff_extension
         if not dodge_state or not weapon_ext or not buff_ext then return false end
-        
+
         local weapon_dodge_template = weapon_ext:dodge_template()
         local stat_buffs = buff_ext:stat_buffs()
         local extra_consecutive_dodges = math.round(stat_buffs.extra_consecutive_dodges or 0)
         local dr_start = (weapon_dodge_template and weapon_dodge_template.diminishing_return_start or 2) + extra_consecutive_dodges
-        
+
         return dodge_state.consecutive_dodges > dr_start
     end)
-    
+
     if ok_tired and is_tired then
         send_pishock_command("on_tired_dodge")
     end
@@ -380,7 +375,7 @@ end)
 
 mod:hook_safe(CLASS.PlayerUnitWeaponExtension, "blocked_attack", function(self, attacking_unit, hit_world_position, block_broken, weapon_template, attack_type, block_cost, is_perfect_block)
     if not self._unit or not is_local_player(self._unit) then return end
-    
+
     if block_broken then
         send_pishock_command("on_guard_broken")
     end
@@ -404,38 +399,36 @@ end)
 
 mod:hook_safe(CLASS.PlayerUnitHealthExtension, "add_damage", function(self, damage_amount, permanent_damage, hit_actor, damage_profile, attack_type, attack_direction, attacking_unit)
     if damage_amount <= 0 and permanent_damage <= 0 then return end
-    
+
     local is_target_local = false
     local ok, is_me = pcall(is_local_player, self._unit)
     if ok and is_me then is_target_local = true end
-    
+
     local is_attacker_local = false
     if attacking_unit then
         local ok2, is_me2 = pcall(is_local_player, attacking_unit)
         if ok2 and is_me2 then is_attacker_local = true end
     end
-    
-    -- Filter out grimoire damage from standard "damage_taken"
+
     local is_grimoire = false
     if damage_profile and type(damage_profile) == "table" and damage_profile.name == "grimoire_tick" then
         is_grimoire = true
     end
-    
+
     if is_grimoire then
         if is_target_local then
             send_pishock_command("on_grimoire_damage")
         end
-        return -- Prevent further processing so it doesn't trigger on_damage_taken
+        return
     end
-    
-    -- Filter out pure corruption damage
+
     if damage_amount <= 0 and permanent_damage > 0 then
         if is_target_local then
             send_pishock_command("on_corruption_damage")
         end
         return
     end
-    
+
     if is_target_local then
         if not is_player_downed_or_disabled(self._unit) then
             send_pishock_command("on_damage_taken")
@@ -447,13 +440,13 @@ mod:hook_safe(CLASS.AttackReportManager, "add_attack_result", function(self, dam
     if attack_result == "friendly_fire" then
         local target_is_me = false
         local attacker_is_me = false
-        
+
         local ok1, is_me1 = pcall(is_local_player, attacked_unit)
         if ok1 and is_me1 then target_is_me = true end
-        
+
         local ok2, is_me2 = pcall(is_local_player, attacking_unit)
         if ok2 and is_me2 then attacker_is_me = true end
-        
+
         if target_is_me then
             send_pishock_command("on_friendly_fire_taken")
         elseif attacker_is_me then
@@ -482,12 +475,11 @@ mod:hook_safe(CLASS.HudElementPlayerBuffs, "_update_buffs", function(self)
     local unit_data = player_extensions and player_extensions.unit_data
     if not unit_data then return end
 
-    -- Health-drop detection
     local health_frac = local_health_fraction()
     if health_frac then
         if last_health_frac then
             local is_disabled = is_player_downed_or_disabled(local_player_unit())
-            
+
             local threshold = (mod:get("trigger_on_health_threshold_value") or 30) / 100.0
             if health_frac <= threshold and last_health_frac > threshold then
                 if not is_disabled then
@@ -500,7 +492,6 @@ mod:hook_safe(CLASS.HudElementPlayerBuffs, "_update_buffs", function(self)
         last_health_frac = nil
     end
 
-    -- Stamina-drop detection
     local stamina_frac = local_stamina_fraction()
     if stamina_frac then
         if last_stamina_frac then
@@ -516,7 +507,6 @@ mod:hook_safe(CLASS.HudElementPlayerBuffs, "_update_buffs", function(self)
         last_stamina_frac = nil
     end
 
-    -- Suppression detection
     local is_suppressed = local_is_suppressed()
     if is_suppressed and not was_suppressed then
         local is_disabled = is_player_downed_or_disabled(local_player_unit())
@@ -541,7 +531,6 @@ mod:hook_safe(CLASS.DialogueSystem, "_play_dialogue_event_implementation", funct
     send_pishock_command("on_cheer")
 end)
 
--- ===== Commands =====
 
 mod:command("pishock_username", "Set PiShock Username", function(...)
     local args = {...}
@@ -584,7 +573,7 @@ mod:command("pishock_info", "Show PiShock Account Info", function()
 
     local display_username = username ~= "" and username or "[Not Set]"
     local display_shockers = shocker_names ~= "" and shocker_names or "[All Devices]"
-    
+
     local display_apikey = "[Not Set]"
     if apikey ~= "" then
         if string.len(apikey) > 4 then
