@@ -10,18 +10,7 @@ You must start a server that's within the Pishock mod folder in order for Darkti
 %PROGRAMFILES(X86)%\Steam\steamapps\common\Warhammer 40,000 DARKTIDE\mods\PiShock\companion
 
 lots of options, such as:
-Health Damage Taken
-Health Drops Below Percentage
-Toughness Broken
-Knocked Down
-Player Death
-Peril Overload
-Boss Spawned
-Pounced by Hound
-Trapped by Trapper
-Grabbed by Mutant
-Eaten by Beast of Nurgle
-Grabbed by Chaos Spawn
+Health Damage Taken, Health Drops Below Percentage, Toughness Broken, Knocked Down, Player Death, Peril Overload, Boss Spawned, Pounced by Hound, Trapped by Trapper, Grabbed by Mutant, Eaten by Beast of Nurgle, Grabbed by Chaos Spawn, Grimoire Corruption Tick, Corruption Taken, Stamina Depleted, Guard Broken, Tired Dodge, High Suppression, Friendly Fire (Taken), Friendly Fire (Dealt), Minigame Failure, Plasma / Psyker Explosion, and For the Emperor!
 
 COMMANDS:
 
