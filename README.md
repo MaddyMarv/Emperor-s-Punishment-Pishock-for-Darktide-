@@ -1,5 +1,6 @@
 # Emperor-s-Punishment-Pishock-for-Darktide-
 Allows darktide to communicate with the Pishock shock collar device :)
+<img width="1207" height="635" alt="image" src="https://github.com/user-attachments/assets/e4c7871f-dff6-47d4-aad3-3c5242d9b5fd" />
 
 You are able to control intensity and durations along with the ability to see chat messages when triggered and set limits for cooldowns.
 
