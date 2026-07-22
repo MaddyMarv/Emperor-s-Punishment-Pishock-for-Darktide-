@@ -88,7 +88,7 @@ for _, category in ipairs(hook_categories) do
             value = hook.id
         }
     end
-
+    
     widgets[#widgets + 1] = {
         setting_id = "editor_" .. category.prefix .. "_group",
         type = "group",
