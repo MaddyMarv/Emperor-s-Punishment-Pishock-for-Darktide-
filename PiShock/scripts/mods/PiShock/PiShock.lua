@@ -10,7 +10,7 @@ function mod:clock()
     return 0
 end
 
--- ===== Helper Functions =====
+
 
 local function local_player_unit()
     local player = Managers.player and Managers.player:local_player_safe(1)
@@ -117,7 +117,7 @@ local function is_player_downed_or_disabled(unit)
     return false
 end
 
--- ===== Game Event Hooks =====
+
 
 local TRIGGER_NAMES = {
     on_damage_taken = "Health Damage Taken",
@@ -544,7 +544,7 @@ mod:hook_safe(CLASS.DialogueSystem, "_play_dialogue_event_implementation", funct
     send_pishock_command("on_cheer")
 end)
 
--- ===== Commands =====
+
 
 mod:command("pishock_username", "Set PiShock Username", function(...)
     local args = {...}
