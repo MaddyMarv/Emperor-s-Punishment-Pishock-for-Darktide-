@@ -185,6 +185,29 @@ mod.on_all_mods_loaded = function()
     mod.on_setting_changed("editor_enemies_target")
 end
 
+mod.on_settings_reset = function()
+    local ALL_HOOKS = {
+        "on_damage_taken", "on_grimoire_damage", "on_corruption_damage", "on_health_threshold", "on_toughness_broken", 
+        "on_stamina_depleted", "on_guard_broken", "on_tired_dodge", "on_suppressed", "on_knocked_down", "on_death",
+        "on_minigame_fail", "on_explode", "on_cheer", "on_friendly_fire_taken", "on_friendly_fire_dealt",
+        "on_boss_spawn", "on_pounced", "on_netted", "on_grabbed_mutant", "on_consumed", "on_grabbed_spawn"
+    }
+    
+    for _, hook_id in ipairs(ALL_HOOKS) do
+        mod:set("trigger_" .. hook_id .. "_op", nil, false)
+        mod:set("trigger_" .. hook_id .. "_duration", nil, false)
+        mod:set("trigger_" .. hook_id .. "_intensity", nil, false)
+        mod:set("trigger_" .. hook_id .. "_enable_random_duration", nil, false)
+        mod:set("trigger_" .. hook_id .. "_duration_min", nil, false)
+        mod:set("trigger_" .. hook_id .. "_duration_max", nil, false)
+        mod:set("trigger_" .. hook_id .. "_enable_random_intensity", nil, false)
+        mod:set("trigger_" .. hook_id .. "_intensity_min", nil, false)
+        mod:set("trigger_" .. hook_id .. "_intensity_max", nil, false)
+    end
+    
+    mod.on_all_mods_loaded()
+end
+
 local continuous_trigger_timer = 0
 local is_currently_continuous_disabled = false
 local has_printed_continuous_start = false
