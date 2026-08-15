@@ -1,0 +1,14 @@
+{
+    "name": "Emperor's Punishment (PiShock for Darktide)",
+    "author": "IndicaBunny",
+    "version": "2.2",
+    "source": "https://github.com/MaddyMarv/Emperor-s-Punishment-Pishock-for-Darktide-",
+    "kofi": "https://ko-fi.com/indicabunny",
+    "description": "Allows darktide to communicate with the Pishock shock collar device :)",
+    "order": {
+        "require": [],
+        "this_before": [],
+        "this_after": []
+    },
+    "localization": {}
+}
