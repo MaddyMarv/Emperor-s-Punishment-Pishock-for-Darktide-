@@ -8,10 +8,11 @@
         "kofi": "https://ko-fi.com/indicabunny"
     },
     "description": "Allows darktide to communicate with the Pishock shock collar device :)",
-    "order": {
-        "require": [],
-        "this_before": [],
-        "this_after": []
+    "dependencies": {
+        "required": [],
+        "optional": [],
+        "self_before": [],
+        "self_after": []
     },
     "localization": {}
 }
