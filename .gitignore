@@ -1,0 +1,4 @@
+# Python cache and temporary build directories
+**/__pycache__/
+**/build/
+*.pyc

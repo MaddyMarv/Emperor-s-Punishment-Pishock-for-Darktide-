@@ -1,6 +1,7 @@
 import json
 import urllib.parse
 import urllib.request
+import urllib.error
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import websocket
@@ -38,21 +39,38 @@ def get_pishock_data(username, apikey):
         return pishock_cache[cache_key]
         
     try:
-        # 1. Get User ID
-        auth_url = f"https://auth.pishock.com/Auth/GetUserIfAPIKeyValid?apikey={urllib.parse.quote(str(apikey))}&username={urllib.parse.quote(str(username))}"
-        req1 = urllib.request.Request(auth_url)
-        with urllib.request.urlopen(req1) as response:
-            user_info = json.loads(response.read().decode())
-            # Fallback checks in case the key differs in casing
-            user_id = user_info.get("UserId") or user_info.get("UserID") or user_info.get("userId") or user_info.get("id")
+        # 1. Get User ID via modern PiShock API (https://api.pishock.com/Account)
+        account_url = "https://api.pishock.com/Account"
+        req1 = urllib.request.Request(
+            account_url,
+            headers={
+                "X-PiShock-Api-Key": str(apikey),
+                "User-Agent": "PiShock-Darktide/1.0"
+            }
+        )
+        try:
+            with urllib.request.urlopen(req1) as response:
+                user_info = json.loads(response.read().decode())
+                user_id = user_info.get("UserId") or user_info.get("UserID") or user_info.get("userId") or user_info.get("id")
+        except urllib.error.HTTPError as http_err:
+            if http_err.code == 401:
+                print("Authentication Failed: The provided PiShock API Key is invalid or unauthorized (401).")
+            else:
+                print(f"HTTP error fetching Account info: {http_err}")
+            return None
             
         if not user_id:
-            print("Could not find UserID in auth response.")
+            print("Could not find UserID in account response.")
             return None
             
         # 2. Get Devices
         devices_url = f"https://ps.pishock.com/PiShock/GetUserDevices?UserId={user_id}&Token={urllib.parse.quote(str(apikey))}&api=true"
-        req2 = urllib.request.Request(devices_url)
+        req2 = urllib.request.Request(
+            devices_url,
+            headers={
+                "User-Agent": "PiShock-Darktide/1.0"
+            }
+        )
         with urllib.request.urlopen(req2) as response:
             devices = json.loads(response.read().decode())
             
