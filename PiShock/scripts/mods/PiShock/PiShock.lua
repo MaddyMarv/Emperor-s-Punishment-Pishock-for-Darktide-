@@ -212,6 +212,12 @@ local continuous_trigger_timer = 0
 local is_currently_continuous_disabled = false
 local has_printed_continuous_start = false
 
+local last_health_frac  = nil
+local last_corr_frac    = nil
+local last_stamina_frac = nil
+local last_toughness_frac = nil
+local was_suppressed    = false
+
 function mod.update(dt)
     local tm = mod:clock()
     
@@ -249,6 +255,87 @@ function mod.update(dt)
         end
         local cooldown = tonumber(mod:get("command_cooldown")) or 0
         continuous_trigger_timer = tm + math.max(1.0, cooldown)
+    end
+
+    if unit then
+        local is_disabled = is_player_downed_or_disabled(unit)
+
+        local health_frac = local_health_fraction()
+        if health_frac then
+            if last_health_frac then
+                if health_frac < last_health_frac - 0.001 then
+                    if not is_disabled then
+                        send_pishock_command("on_damage_taken")
+                    end
+                end
+
+                local threshold = (mod:get("trigger_on_health_threshold_value") or 30) / 100.0
+                if health_frac <= threshold and last_health_frac > threshold then
+                    if not is_disabled then
+                        send_pishock_command("on_health_threshold")
+                    end
+                end
+            end
+            last_health_frac = health_frac
+        else
+            last_health_frac = nil
+        end
+
+        local corr_frac = local_corruption_fraction()
+        if corr_frac then
+            if last_corr_frac then
+                if corr_frac > last_corr_frac + 0.001 then
+                    if not is_disabled then
+                        send_pishock_command("on_corruption_damage")
+                    end
+                end
+            end
+            last_corr_frac = corr_frac
+        else
+            last_corr_frac = nil
+        end
+
+        local toughness_frac = local_toughness_fraction()
+        if toughness_frac then
+            if last_toughness_frac then
+                if last_toughness_frac > 0 and toughness_frac <= 0 then
+                    if not is_disabled then
+                        send_pishock_command("on_toughness_broken")
+                    end
+                end
+            end
+            last_toughness_frac = toughness_frac
+        else
+            last_toughness_frac = nil
+        end
+
+        local stamina_frac = local_stamina_fraction()
+        if stamina_frac then
+            if last_stamina_frac then
+                if last_stamina_frac > 0 and stamina_frac <= 0 then
+                    if not is_disabled then
+                        send_pishock_command("on_stamina_depleted")
+                    end
+                end
+            end
+            last_stamina_frac = stamina_frac
+        else
+            last_stamina_frac = nil
+        end
+
+        local is_suppressed = local_is_suppressed()
+        if is_suppressed and not was_suppressed then
+            if not is_disabled then
+                send_pishock_command("on_suppressed")
+            end
+        end
+        was_suppressed = is_suppressed
+    else
+        last_health_frac = nil
+        last_corr_frac = nil
+        last_toughness_frac = nil
+        last_stamina_frac = nil
+        was_suppressed = false
     end
 
     if #pishock_command_queue == 0 then return end
@@ -434,16 +521,20 @@ mod:hook_safe(CLASS.BossExtension, "extensions_ready", function(self)
 end)
 
 mod:hook_safe(CLASS.AttackReportManager, "add_attack_result", function(self, damage_profile, attacked_unit, attacking_unit, attack_direction, hit_world_position, hit_weakspot, damage, attack_result, attack_type, damage_efficiency, is_critical_strike, ...)
+    local target_is_me = false
+    local attacker_is_me = false
+    
+    local ok1, is_me1 = pcall(is_local_player, attacked_unit)
+    if ok1 and is_me1 then target_is_me = true end
+    
+    local ok2, is_me2 = pcall(is_local_player, attacking_unit)
+    if ok2 and is_me2 then attacker_is_me = true end
+    
+    if target_is_me and damage_profile and damage_profile.name == "grimoire_tick" then
+        send_pishock_command("on_grimoire_damage")
+    end
+
     if attack_result == "friendly_fire" then
-        local target_is_me = false
-        local attacker_is_me = false
-        
-        local ok1, is_me1 = pcall(is_local_player, attacked_unit)
-        if ok1 and is_me1 then target_is_me = true end
-        
-        local ok2, is_me2 = pcall(is_local_player, attacking_unit)
-        if ok2 and is_me2 then attacker_is_me = true end
-        
         if target_is_me then
             send_pishock_command("on_friendly_fire_taken")
         elseif attacker_is_me then
@@ -461,98 +552,6 @@ mod:hook_safe(CLASS.MinigameBase, "play_sound", function(self, alias)
     end
 end)
 
-local last_health_frac  = nil
-local last_corr_frac    = nil
-local last_stamina_frac = nil
-local last_toughness_frac = nil
-local last_grimoire_time = 0
-local was_suppressed    = false
-
-mod:hook_safe(CLASS.HudElementPlayerBuffs, "_update_buffs", function(self)
-    if self.__class_name ~= "HudElementPlayerBuffs" or self._filter then return end
-
-    local player_extensions = self._parent and self._parent:player_extensions()
-    local unit_data = player_extensions and player_extensions.unit_data
-    if not unit_data then return end
-
-    local health_frac = local_health_fraction()
-    if health_frac then
-        if last_health_frac then
-            local is_disabled = is_player_downed_or_disabled(local_player_unit())
-            
-            if health_frac < last_health_frac - 0.001 then
-                if not is_disabled then
-                    send_pishock_command("on_damage_taken")
-                end
-            end
-            
-            local threshold = (mod:get("trigger_on_health_threshold_value") or 30) / 100.0
-            if health_frac <= threshold and last_health_frac > threshold then
-                if not is_disabled then
-                    send_pishock_command("on_health_threshold")
-                end
-            end
-        end
-        last_health_frac = health_frac
-    else
-        last_health_frac = nil
-    end
-
-    local corr_frac = local_corruption_fraction()
-    if corr_frac then
-        if last_corr_frac then
-            local is_disabled = is_player_downed_or_disabled(local_player_unit())
-            if corr_frac > last_corr_frac + 0.001 then
-                if not is_disabled then
-                    send_pishock_command("on_corruption_damage")
-                end
-            end
-        end
-        last_corr_frac = corr_frac
-    else
-        last_corr_frac = nil
-    end
-
-    local toughness_frac = local_toughness_fraction()
-    if toughness_frac then
-        if last_toughness_frac then
-            local is_disabled = is_player_downed_or_disabled(local_player_unit())
-            if last_toughness_frac > 0 and toughness_frac <= 0 then
-                if not is_disabled then
-                    send_pishock_command("on_toughness_broken")
-                end
-            end
-        end
-        last_toughness_frac = toughness_frac
-    else
-        last_toughness_frac = nil
-    end
-
-    local stamina_frac = local_stamina_fraction()
-    if stamina_frac then
-        if last_stamina_frac then
-            if last_stamina_frac > 0 and stamina_frac <= 0 then
-                local is_disabled = is_player_downed_or_disabled(local_player_unit())
-                if not is_disabled then
-                    send_pishock_command("on_stamina_depleted")
-                end
-            end
-        end
-        last_stamina_frac = stamina_frac
-    else
-        last_stamina_frac = nil
-    end
-
-    local is_suppressed = local_is_suppressed()
-    if is_suppressed and not was_suppressed then
-        local is_disabled = is_player_downed_or_disabled(local_player_unit())
-        if not is_disabled then
-            send_pishock_command("on_suppressed")
-        end
-    end
-    was_suppressed = is_suppressed
-end)
-
 mod:hook_safe(CLASS.DialogueSystem, "_play_dialogue_event_implementation", function(self, go_id, is_level_unit, level_name_hash, dialogue_id, ...)
     local ok, is_cheer = pcall(function()
         return NetworkLookup.dialogue_names[dialogue_id] == "com_wheel_vo_for_the_emperor"
@@ -564,7 +563,10 @@ mod:hook_safe(CLASS.DialogueSystem, "_play_dialogue_event_implementation", funct
     end)
     if not ok_unit or not unit then return end
 
-    send_pishock_command("on_cheer")
+    local ok_me, is_me = pcall(is_local_player, unit)
+    if ok_me and is_me then
+        send_pishock_command("on_cheer")
+    end
 end)
 
 
