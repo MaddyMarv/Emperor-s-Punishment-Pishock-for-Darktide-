@@ -218,7 +218,20 @@ local last_stamina_frac = nil
 local last_toughness_frac = nil
 local was_suppressed    = false
 
+mod.on_disabled = function()
+    table.clear(pishock_command_queue)
+    last_health_frac = nil
+    last_corr_frac = nil
+    last_stamina_frac = nil
+    last_toughness_frac = nil
+    was_suppressed = false
+end
+
 function mod.update(dt)
+    if not mod:is_enabled() then
+        return
+    end
+
     local tm = mod:clock()
     
     local unit = local_player_unit()
